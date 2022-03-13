@@ -1,5 +1,9 @@
+# index が進むかどうかは robot のメソッドで判定する
+# RobotInterface にて index が進むかの判定メソッドを Command クラスから使えるようにする方がよさそう
+
 require_relative './command.rb'
 require_relative './errors.rb'
+require_relative './../../struct/pos.rb'
 
 module Objects
   module Robot
@@ -12,20 +16,39 @@ module Objects
       TURN_LEFT_REGEX = /turn_left/
       END_REGEX = /end/
 
-      def initialize(input)
+      module Dir
+        FRONT = 0
+        RIGHT = 1
+        BACK = 2
+        LEFT = 3
+      end
+
+      attr_reader :pos, :icon
+
+      def initialize(input, field_controller, pos: Pos.new)
         @commands = parse(input)
-        @command_index = 0
+        @field_controller = field_controller
+        @pos = pos
+        @direction = Dir::FRONT
+        @icon = update_icon
       end
 
       def update
-        raise ReachLastCommand if @command_index >= @commands.length
-
-        talk(@commands[@command_index].call)
-        update_command_index(@commands[@command_index])
+        action_command = @commands.search_movable_action
+        process_next_action(action_command)
+        update_commands_index(action_command)
+        update_icon
+        # 終了確認処理をここに書く
       end
 
       private
       def parse(input)
+        Command::Block.new(_parse(input), origin: true)
+      end
+
+      # arg: raw_string
+      # ret: command::block instance
+      def _parse(input)
         commands = []
         idx = 0
         while idx < input.length
@@ -45,7 +68,7 @@ module Objects
           when LOOP_COMMAND_REGEX
             child_loop_number = input[idx].slice(/([0-9]+)/).to_i
             child_input = input[(idx + 1)..-1]
-            child_block = Command::Block.new(parse(child_input), loop_number: child_loop_number)
+            child_block = Command::Block.new(_parse(child_input), loop_number: child_loop_number)
             commands << child_block
             idx += child_block.size
           when END_REGEX
@@ -57,36 +80,104 @@ module Objects
         return commands
       end
 
-      def talk(command)
-        message = case command
-                  when Command::GoFront
-                    '前へ進む'
-                  when Command::GoBack
-                    '後ろへ下がる'
-                  when Command::TurnRight
-                    '右へ回る'
-                  when Command::TurnLeft
-                    '左へ回る'
-                  else
-                    '不正なコマンドです'
-                  end
-        puts message
+      # 動作が定義されているコマンドを再帰的に探索し実行する
+      def process_next_action(action_command)
+        case action_command
+        when Command::GoFront, Command::GoBack
+          move_to(next_pos(action_command))
+        when Command::TurnRight
+          turn_right
+        when Command::TurnLeft
+          turn_left
+        end
       end
 
-      def update_command_index(command)
-        case command
-        when Command::GoFront, Command::GoBack, Command::TurnRight, Command::TurnLeft
-          @command_index += 1
-        when Command::Block
-          @command_index += 1 if command.increment_outer_index?
+      def update_commands_index(action_command)
+        case action_command
+        when Command::GoFront, Command::GoBack
+          case @field_controller.at(next_pos(action_command))
+          when Field::Wall
+            @commands.update_index
+          else
+            # skip
+          end
+        when Command::TurnRight, Command::TurnLeft
+          @commands.update_index
         else
           binding.pry
-          raise CommandSyntaxError
+          raise CommandSyntaxError # 動作が登録されていないコマンド
         end
+      end
 
-        if @command_index == @commands.length
-          binding.pry
-          raise ReachLastCommand
+      def next_pos(command)
+        case command
+        when Command::GoFront
+          case @direction
+          when Dir::FRONT
+            Pos.new(x: @pos.x, y: @pos.y - 1)
+          when Dir::RIGHT
+            Pos.new(x: @pos.x + 1, y: @pos.y)
+          when Dir::BACK
+            Pos.new(x: @pos.x, y: @pos.y + 1)
+          when Dir::LEFT
+            Pos.new(x: @pos.x - 1, y: @pos.y)
+          end
+        when Command::GoBack
+          case @direction
+          when Dir::FRONT
+            Pos.new(x: @pos.x, y: @pos.y + 1)
+          when Dir::RIGHT
+            Pos.new(x: @pos.x - 1, y: @pos.y)
+          when Dir::BACK
+            Pos.new(x: @pos.x, y: @pos.y - 1)
+          when Dir::LEFT
+            Pos.new(x: @pos.x + 1, y: @pos.y)
+          end
+        when Command::TurnRight, Command::TurnLeft
+          @pos
+        end
+      end
+
+      def move_to(next_pos)
+        @pos = next_pos if @field_controller.in_field?(next_pos)
+      end
+
+      def turn_right
+        case @direction
+        when Dir::FRONT
+          @direction = Dir::RIGHT
+        when Dir::RIGHT
+          @direction = Dir::BACK
+        when Dir::BACK
+          @direction = Dir::LEFT
+        when Dir::LEFT
+          @direction = Dir::FRONT
+        end
+      end
+
+      def turn_left
+        case @direction
+        when Dir::FRONT
+          @direction = Dir::LEFT
+        when Dir::RIGHT
+          @direction = Dir::FRONT
+        when Dir::BACK
+          @direction = Dir::RIGHT
+        when Dir::LEFT
+          @direction = Dir::BACK
+        end
+      end
+
+      def update_icon
+        case @direction
+        when Dir::FRONT
+          @icon = 'Ａ'
+        when Dir::RIGHT
+          @icon = '＞'
+        when Dir::BACK
+          @icon = 'Ｖ'
+        when Dir::LEFT
+          @icon = '＜'
         end
       end
     end
