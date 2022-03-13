@@ -23,6 +23,13 @@ module Objects
         LEFT = 3
       end
 
+      module Icon
+        FRONT = 'Ａ'
+        RIGHT = '＞'
+        BACK = 'Ｖ'
+        LEFT = '＜'
+      end
+
       attr_reader :pos, :icon
 
       def initialize(input, field_controller, pos: Pos.new)
@@ -171,13 +178,13 @@ module Objects
       def update_icon
         case @direction
         when Dir::FRONT
-          @icon = 'Ａ'
+          @icon = Icon::FRONT
         when Dir::RIGHT
-          @icon = '＞'
+          @icon = Icon::RIGHT
         when Dir::BACK
-          @icon = 'Ｖ'
+          @icon = Icon::BACK
         when Dir::LEFT
-          @icon = '＜'
+          @icon = Icon::LEFT
         end
       end
     end
