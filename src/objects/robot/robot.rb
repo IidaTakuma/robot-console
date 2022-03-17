@@ -24,10 +24,10 @@ module Objects
       end
 
       module Icon
-        FRONT = 'Ａ'
-        RIGHT = '＞'
-        BACK = 'Ｖ'
-        LEFT = '＜'
+        FRONT = 'A'
+        RIGHT = '>'
+        BACK = '<'
+        LEFT = 'V'
       end
 
       attr_reader :pos, :icon
