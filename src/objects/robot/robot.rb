@@ -23,27 +23,38 @@ module Objects
         LEFT = 3
       end
 
+      module Icon
+        FRONT = 'Ａ'
+        RIGHT = '＞'
+        BACK = 'Ｖ'
+        LEFT = '＜'
+      end
+
       attr_reader :pos, :icon
 
-      def initialize(input, field_controller, pos: Pos.new)
+      def initialize(input, field_controller, pos: Pos.new, direction: Dir::FRONT)
         @commands = parse(input)
         @field_controller = field_controller
         @pos = pos
-        @direction = Dir::FRONT
+        @direction = direction
         @icon = update_icon
       end
 
       def update
-        action_command = @commands.search_movable_action
-        process_next_action(action_command)
-        update_commands_index(action_command)
-        update_icon
-        # 終了確認処理をここに書く
+        begin
+          action_command = @commands.get_movable_command
+          process_next_action(action_command)
+          update_commands_index(action_command)
+          update_icon
+        rescue ReachLastCommand
+          puts 'プログラムを終了します'
+          exit
+        end
       end
 
       private
       def parse(input)
-        Command::Block.new(_parse(input), origin: true)
+        Command::Block.new(_parse(input), is_outermost_loop: true)
       end
 
       # arg: raw_string
@@ -171,13 +182,13 @@ module Objects
       def update_icon
         case @direction
         when Dir::FRONT
-          @icon = 'Ａ'
+          @icon = Icon::FRONT
         when Dir::RIGHT
-          @icon = '＞'
+          @icon = Icon::RIGHT
         when Dir::BACK
-          @icon = 'Ｖ'
+          @icon = Icon::BACK
         when Dir::LEFT
-          @icon = '＜'
+          @icon = Icon::LEFT
         end
       end
     end
