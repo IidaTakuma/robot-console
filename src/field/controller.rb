@@ -4,7 +4,7 @@ require_relative './wall.rb'
 module Field
   class Controller
 
-    attr_reader :size_x, :size_y
+    attr_reader :size_x, :size_y, :objects
 
     def initialize(size_x: 8, size_y: 8)
       @size_x = size_x

@@ -5,7 +5,7 @@ require_relative './../render/game.rb'
 module Scene
   class Game
 
-    MAP_MARGIN_TOP = 3
+    MAP_MARGIN_TOP = 2
     MAP_MARGIN_LEFT = 3
 
     def initialize(window, field_controller)
@@ -24,8 +24,8 @@ module Scene
 
       # render
       @render.init_window
-      render_map
-      render_frame
+      render_field
+      render_objects
       @render.refresh_window
     end
 
@@ -38,30 +38,21 @@ module Scene
     end
 
     private
-    def render_map
+    def render_field
       len_x = @field_controller.size_x
       len_y = @field_controller.size_y
 
-      # 枠線を描画
-      @render.draw_rectangle(
-        MAP_MARGIN_LEFT - 1,
-        MAP_MARGIN_LEFT + len_x,
-        MAP_MARGIN_TOP - 1,
-        MAP_MARGIN_TOP + len_y
-      )
+      @render.draw_field(len_x, len_y)
 
-      len_y.times do |x|
-        len_x.times do |y|
-          if obj = @field_controller.at(Pos.new(x: x, y: y))
-            @render.draw(y + MAP_MARGIN_TOP, x + MAP_MARGIN_LEFT, obj.icon)
-          else
-            @render.draw(y + MAP_MARGIN_TOP, x + MAP_MARGIN_LEFT, ' ')
-          end
-        end
+      @field_controller.objects.each do |object|
+        @render.draw_object_icon(object.pos.x, object.pos.y, object.icon)
       end
     end
 
-    def render_frame
+    def render_objects
+      @objects.each do |object|
+        @render.draw_object_icon(object.pos.x, object.pos.y, object.icon)
+      end
     end
   end
 end

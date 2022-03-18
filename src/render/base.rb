@@ -1,7 +1,7 @@
 module Render
   class Base
 
-    SCALE_X = 2
+    SCALE_X = 1
     SCALE_Y = 1
 
     def initialize(window)

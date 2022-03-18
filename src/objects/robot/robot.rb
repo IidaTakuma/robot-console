@@ -24,10 +24,10 @@ module Objects
       end
 
       module Icon
-        FRONT = 'A'
-        RIGHT = '>'
-        BACK = '<'
-        LEFT = 'V'
+        FRONT = '◢◣'
+        RIGHT = ':>'
+        BACK = '◥◤'
+        LEFT = '<:'
       end
 
       attr_reader :pos, :icon
@@ -81,9 +81,9 @@ module Objects
             child_input = input[(idx + 1)..-1]
             child_block = Command::Block.new(_parse(child_input), loop_number: child_loop_number)
             commands << child_block
-            idx += child_block.size
+            idx += child_block.size + 1
           when END_REGEX
-            break
+            return commands
           else
             raise CommandSyntaxError
           end
@@ -107,7 +107,7 @@ module Objects
         case action_command
         when Command::GoFront, Command::GoBack
           case @field_controller.at(next_pos(action_command))
-          when Field::Wall
+          when Field::Wall, Field::Stone
             @commands.update_index
           else
             # skip
