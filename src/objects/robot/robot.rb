@@ -25,9 +25,19 @@ module Objects
 
       module Icon
         FRONT = '◢◣'
-        RIGHT = ':>'
+        RIGHT = ':▶'
         BACK = '◥◤'
-        LEFT = '<:'
+        LEFT = '◀:'
+        FINISHED_1 = '--'
+        FINISHED_2 = '**'
+        REACHED_1 = '^^'
+        REACHED_2 = '--'
+      end
+
+      module Status
+        IN_GAME = 0
+        PROGRAM_FINISHED = 1
+        REACHED_GOAL = 2
       end
 
       attr_reader :pos, :icon
@@ -37,19 +47,26 @@ module Objects
         @field_controller = field_controller
         @pos = pos
         @direction = direction
+        @status = Status::IN_GAME
         @icon = update_icon
       end
 
       def update
-        begin
-          action_command = @commands.get_movable_command
-          process_next_action(action_command)
-          update_commands_index(action_command)
-          update_icon
-        rescue ReachLastCommand
-          puts 'プログラムを終了します'
-          exit
+        case @status
+        when Status::IN_GAME
+          begin
+            action_command = @commands.get_movable_command
+            process_next_action(action_command)
+            update_commands_index(action_command)
+          rescue ReachLastCommand
+            @status = Status::PROGRAM_FINISHED
+          end
+        when Status::REACHED_GOAL
+          # skip
+        when Status::PROGRAM_FINISHED
+          # skip
         end
+        update_icon
       end
 
       private
@@ -154,41 +171,40 @@ module Objects
       end
 
       def turn_right
-        case @direction
-        when Dir::FRONT
-          @direction = Dir::RIGHT
-        when Dir::RIGHT
-          @direction = Dir::BACK
-        when Dir::BACK
-          @direction = Dir::LEFT
-        when Dir::LEFT
-          @direction = Dir::FRONT
-        end
+        @direction = (@direction + 1) % 4
       end
 
       def turn_left
-        case @direction
-        when Dir::FRONT
-          @direction = Dir::LEFT
-        when Dir::RIGHT
-          @direction = Dir::FRONT
-        when Dir::BACK
-          @direction = Dir::RIGHT
-        when Dir::LEFT
-          @direction = Dir::BACK
-        end
+        @direction = (@direction + 3) % 4
       end
 
       def update_icon
-        case @direction
-        when Dir::FRONT
-          @icon = Icon::FRONT
-        when Dir::RIGHT
-          @icon = Icon::RIGHT
-        when Dir::BACK
-          @icon = Icon::BACK
-        when Dir::LEFT
-          @icon = Icon::LEFT
+        case @status
+        when Status::IN_GAME
+          @icon = case @direction
+                  when Dir::FRONT
+                    Icon::FRONT
+                  when Dir::RIGHT
+                    Icon::RIGHT
+                  when Dir::BACK
+                    Icon::BACK
+                  when Dir::LEFT
+                    Icon::LEFT
+                  end
+        when Status::PROGRAM_FINISHED
+          @icon = case @icon
+                  when Icon::FINISHED_1
+                    Icon::FINISHED_2
+                  else
+                    Icon::FINISHED_1
+                  end
+        when Status::REACHED_GOAL
+          @icon = case @icon
+                  when Icon::REACHED_1
+                    Icon::REACHED_2
+                  when Icon::REACHED_2
+                    Icon::REACHED_1
+                  end
         end
       end
     end
