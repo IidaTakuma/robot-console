@@ -42,7 +42,7 @@ def main
   game_scene.register(robot)
   while true
     game_scene.update
-    sleep(0.4)
+    sleep(0.2)
   end
 end
 

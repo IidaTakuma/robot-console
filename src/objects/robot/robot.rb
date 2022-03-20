@@ -55,9 +55,9 @@ module Objects
         case @status
         when Status::IN_GAME
           begin
-            action_command = @commands.get_movable_command
-            process_next_action(action_command)
-            update_commands_index(action_command)
+            movable_command = @commands.get_movable_command
+            process_action(movable_command)
+            update_commands_index(movable_command)
           rescue ReachLastCommand
             @status = Status::PROGRAM_FINISHED
           end
@@ -109,10 +109,11 @@ module Objects
       end
 
       # 動作が定義されているコマンドを再帰的に探索し実行する
-      def process_next_action(action_command)
-        case action_command
+      def process_action(movable_command)
+        case movable_command
         when Command::GoFront, Command::GoBack
-          move_to(next_pos(action_command))
+          move_to(next_pos(movable_command))
+          process_field_event
         when Command::TurnRight
           turn_right
         when Command::TurnLeft
@@ -120,10 +121,20 @@ module Objects
         end
       end
 
-      def update_commands_index(action_command)
-        case action_command
+      # 現在いるマスのイベントを処理する
+      def process_field_event
+        case @field_controller.at(@pos)
+        when Field::Goal
+          @status = Status::REACHED_GOAL
+        else
+          # skip
+        end
+      end
+
+      def update_commands_index(movable_command)
+        case movable_command
         when Command::GoFront, Command::GoBack
-          case @field_controller.at(next_pos(action_command))
+          case @field_controller.at(next_pos(movable_command))
           when Field::Wall, Field::Stone
             @commands.update_index
           else
@@ -202,7 +213,7 @@ module Objects
           @icon = case @icon
                   when Icon::REACHED_1
                     Icon::REACHED_2
-                  when Icon::REACHED_2
+                  else Icon::REACHED_2
                     Icon::REACHED_1
                   end
         end
