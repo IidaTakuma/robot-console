@@ -1,5 +1,3 @@
-# コマンドの構造を保持するのみで、indexの更新などは行わない
-
 module Objects
   module Robot
     module Command

@@ -24,10 +24,20 @@ module Objects
       end
 
       module Icon
-        FRONT = 'Ａ'
-        RIGHT = '＞'
-        BACK = 'Ｖ'
-        LEFT = '＜'
+        FRONT = '◢◣'
+        RIGHT = ':▶'
+        BACK = '◥◤'
+        LEFT = '◀:'
+        FINISHED_1 = '--'
+        FINISHED_2 = '**'
+        REACHED_1 = '^^'
+        REACHED_2 = '--'
+      end
+
+      module Status
+        IN_GAME = 0
+        PROGRAM_FINISHED = 1
+        REACHED_GOAL = 2
       end
 
       attr_reader :pos, :icon
@@ -37,19 +47,26 @@ module Objects
         @field_controller = field_controller
         @pos = pos
         @direction = direction
+        @status = Status::IN_GAME
         @icon = update_icon
       end
 
       def update
-        begin
-          action_command = @commands.get_movable_command
-          process_next_action(action_command)
-          update_commands_index(action_command)
-          update_icon
-        rescue ReachLastCommand
-          puts 'プログラムを終了します'
-          exit
+        case @status
+        when Status::IN_GAME
+          begin
+            movable_command = @commands.get_movable_command
+            process_action(movable_command)
+            update_commands_index(movable_command)
+          rescue ReachLastCommand
+            @status = Status::PROGRAM_FINISHED
+          end
+        when Status::REACHED_GOAL
+          # skip
+        when Status::PROGRAM_FINISHED
+          # skip
         end
+        update_icon
       end
 
       private
@@ -81,9 +98,9 @@ module Objects
             child_input = input[(idx + 1)..-1]
             child_block = Command::Block.new(_parse(child_input), loop_number: child_loop_number)
             commands << child_block
-            idx += child_block.size
+            idx += child_block.size + 1
           when END_REGEX
-            break
+            return commands
           else
             raise CommandSyntaxError
           end
@@ -92,10 +109,11 @@ module Objects
       end
 
       # 動作が定義されているコマンドを再帰的に探索し実行する
-      def process_next_action(action_command)
-        case action_command
+      def process_action(movable_command)
+        case movable_command
         when Command::GoFront, Command::GoBack
-          move_to(next_pos(action_command))
+          move_to(next_pos(movable_command))
+          process_field_event
         when Command::TurnRight
           turn_right
         when Command::TurnLeft
@@ -103,11 +121,21 @@ module Objects
         end
       end
 
-      def update_commands_index(action_command)
-        case action_command
+      # 現在いるマスのイベントを処理する
+      def process_field_event
+        case @field_controller.at(@pos)
+        when Field::Goal
+          @status = Status::REACHED_GOAL
+        else
+          # skip
+        end
+      end
+
+      def update_commands_index(movable_command)
+        case movable_command
         when Command::GoFront, Command::GoBack
-          case @field_controller.at(next_pos(action_command))
-          when Field::Wall
+          case @field_controller.at(next_pos(movable_command))
+          when Field::Wall, Field::Stone
             @commands.update_index
           else
             # skip
@@ -154,41 +182,40 @@ module Objects
       end
 
       def turn_right
-        case @direction
-        when Dir::FRONT
-          @direction = Dir::RIGHT
-        when Dir::RIGHT
-          @direction = Dir::BACK
-        when Dir::BACK
-          @direction = Dir::LEFT
-        when Dir::LEFT
-          @direction = Dir::FRONT
-        end
+        @direction = (@direction + 1) % 4
       end
 
       def turn_left
-        case @direction
-        when Dir::FRONT
-          @direction = Dir::LEFT
-        when Dir::RIGHT
-          @direction = Dir::FRONT
-        when Dir::BACK
-          @direction = Dir::RIGHT
-        when Dir::LEFT
-          @direction = Dir::BACK
-        end
+        @direction = (@direction + 3) % 4
       end
 
       def update_icon
-        case @direction
-        when Dir::FRONT
-          @icon = Icon::FRONT
-        when Dir::RIGHT
-          @icon = Icon::RIGHT
-        when Dir::BACK
-          @icon = Icon::BACK
-        when Dir::LEFT
-          @icon = Icon::LEFT
+        case @status
+        when Status::IN_GAME
+          @icon = case @direction
+                  when Dir::FRONT
+                    Icon::FRONT
+                  when Dir::RIGHT
+                    Icon::RIGHT
+                  when Dir::BACK
+                    Icon::BACK
+                  when Dir::LEFT
+                    Icon::LEFT
+                  end
+        when Status::PROGRAM_FINISHED
+          @icon = case @icon
+                  when Icon::FINISHED_1
+                    Icon::FINISHED_2
+                  else
+                    Icon::FINISHED_1
+                  end
+        when Status::REACHED_GOAL
+          @icon = case @icon
+                  when Icon::REACHED_1
+                    Icon::REACHED_2
+                  else Icon::REACHED_2
+                    Icon::REACHED_1
+                  end
         end
       end
     end
