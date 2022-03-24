@@ -13,8 +13,7 @@ class Main
     @destination = Destination::GAME
 
     if ENV['DEVELOP'].nil?
-      @graphics = Graphics.new
-      @window = @graphics.create_window
+      @window = Graphics.create_window
     else # do not use curses debug mode
       require_relative './src/debugger/mock_window.rb'
       @window = MockWindow.new
@@ -22,16 +21,21 @@ class Main
   end
 
   def process
-    while true
-      case @destination
-      when Destination::MENU
-        # pass
-      when Destination::GAME
-        Game::Controller.new(@window).process
+    begin
+      while true
+        case @destination
+        when Destination::MENU
+          # pass
+        when Destination::GAME
+          Game::Controller.new(@window).process
+        end
       end
+    ensure
+      Curses.close_screen
     end
   end
 end
+
 
 if __FILE__ == $0
   if ARGV[0] == '--debug'
