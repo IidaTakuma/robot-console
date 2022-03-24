@@ -1,0 +1,10 @@
+turn_left
+loop(3)
+  go_front
+  turn_right
+end
+go_front
+turn_left
+go_front
+turn_right
+go_front
