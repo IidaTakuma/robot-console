@@ -1,0 +1,24 @@
+# stage location is 0-index.
+-
+  meta:
+    size_x: 9
+    size_y: 9
+    start_x: 5
+    start_y: 5
+    start_direction: 0 # 0:front, 1:right, 2:back, 3:left
+    goal_x: 7
+    goal_y: 8
+  objects:
+    stone:
+      -
+        x: 2
+        y: 4
+      -
+        x: 3
+        y: 1
+      -
+        x: 7
+        y: 9
+      -
+        x: 8
+        y: 3
