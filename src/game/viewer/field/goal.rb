@@ -1,10 +1,10 @@
 module Game
-  module Stage
-    class Stone
+  module Field
+    class Goal
       attr_reader :pos, :icon
       def initialize(pos)
         @pos = pos
-        @icon = '[]'
+        @icon = '▕≈'
       end
     end
   end

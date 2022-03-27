@@ -41,5 +41,7 @@ if __FILE__ == $0
   if ARGV[0] == '--debug'
     ENV['DEVELOP'] = '1'
   end
+  ENV['STAGE_FILE_PATH'] = 'stage.yml'
+  ENV['INPUT_FILE_PATH'] = 'input.txt'
   Main.new.process
 end

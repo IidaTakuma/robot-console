@@ -1,5 +1,5 @@
 module Base
-  module Render
+  module View
 
     def initialize(window)
       @window = window
@@ -8,7 +8,6 @@ module Base
     private
     def init_window
       @window.clear
-      @window.box('|', '-')
     end
 
     def refresh_window
