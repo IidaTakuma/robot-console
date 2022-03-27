@@ -1,5 +1,5 @@
 module Game
-  module Stage
+  module Field
     class Wall; end
   end
 end

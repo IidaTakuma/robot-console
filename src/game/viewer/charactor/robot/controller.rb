@@ -33,11 +33,11 @@ module Game
 
         attr_reader :pos, :icon
 
-        def initialize(raw_input, stage_controller)
+        def initialize(raw_input, stage)
           @commands = parse_input(raw_input)
-          @stage_controller = stage_controller
-          @pos = stage_controller.start_pos
-          @direction = stage_controller.start_direction
+          @stage = stage
+          @pos = stage.start_pos
+          @direction = stage.start_direction
           @status = Status::IN_GAME
           @icon = update_icon
         end
@@ -122,8 +122,8 @@ module Game
 
         # 現在いるマスのイベントを処理する
         def process_field_event
-          case @stage_controller.at(@pos)
-          when Stage::Goal
+          case @stage.at(@pos)
+          when Field::Goal
             @status = Status::REACHED_GOAL
           else
             # skip
@@ -133,8 +133,8 @@ module Game
         def update_commands_index(movable_command)
           case movable_command
           when Command::GoFront, Command::GoBack
-            case @stage_controller.at(next_pos(movable_command))
-            when Stage::Wall, Stage::Stone
+            case @stage.at(next_pos(movable_command))
+            when Field::Wall, Field::Stone
               @commands.update_index
             else
               # skip
@@ -177,7 +177,7 @@ module Game
         end
 
         def move_to(next_pos)
-          @pos = next_pos if @stage_controller.in_field?(next_pos)
+          @pos = next_pos if @stage.in_field?(next_pos)
         end
 
         def turn_right
